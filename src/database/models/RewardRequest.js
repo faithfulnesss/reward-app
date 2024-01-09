@@ -1,7 +1,9 @@
 const mongoose = require("mongoose");
+const Employee = require("./Employee");
+const Award = require("./Award");
 
-const AwardRequestSchema = new mongoose.Schema({
-  Award: { type: mongoose.Schema.Types.ObjectId, ref: "Award" },
+const RewardRequestSchema = new mongoose.Schema({
+  Reward: { type: mongoose.Schema.Types.ObjectId, ref: "Reward" },
   Employee: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
   Status: {
     type: String,
@@ -11,4 +13,4 @@ const AwardRequestSchema = new mongoose.Schema({
   CreatedAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("AwardRequest", AwardRequestSchema);
+module.exports = mongoose.model("RewardRequest", RewardRequestSchema);

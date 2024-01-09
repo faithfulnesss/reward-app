@@ -2,13 +2,17 @@ const mongoose = require("mongoose");
 
 const rewardSchema = new mongoose.Schema({
   Name: String,
-  Image: {
+  URL: {
     type: String,
     required: false,
   },
-  Price: Number,
+  Points: Number,
   Value: String,
   Description: String,
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const RewardModel = mongoose.model("Reward", rewardSchema);

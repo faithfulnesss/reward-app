@@ -1,6 +1,4 @@
 const Award = require("../models/Award");
-const { getNotionAwards } = require("../../notion/services/notionService");
-// const connectDB = require("../connect");
 
 const createAward = async (award) => {
   try {
@@ -11,27 +9,48 @@ const createAward = async (award) => {
   }
 };
 
-const getAwards = async () => {
+const getAward = async (filter) => {
   try {
-    const awards = await Award.find();
+    const award = await Award.findOne(filter || {});
+    return award;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const getAwards = async (filter) => {
+  try {
+    const awards = await Award.find(filter || { isDeleted: false });
     return awards;
   } catch (error) {
     console.error(error);
   }
 };
 
-const getAwardsByCategory = async (category) => {
+const getCategories = async () => {
   try {
-    const awards = await Award.find({ Type: category });
-    return awards;
+    const categories = await Award.distinct("Type", { isDeleted: false });
+    return categories;
   } catch (error) {
     console.error(error);
   }
 };
 
-const getAwardByName = async (name) => {
+const updateAward = async (awardId, update) => {
   try {
-    const award = await Award.findOne({ Name: name });
+    const award = await Award.findOneAndUpdate({ _id: awardId }, { ...update });
+    return award;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const softDeleteAward = async (awardId) => {
+  try {
+    const award = await Award.findOneAndUpdate(
+      { _id: awardId },
+      { isDeleted: true }
+    );
     return award;
   } catch (error) {
     console.error(error);
@@ -39,8 +58,12 @@ const getAwardByName = async (name) => {
 };
 
 module.exports = {
-  createAward,
+  getAward,
   getAwards,
-  getAwardsByCategory,
-  getAwardByName,
+  // getAwardsByCategory,
+  // getAwardByName,
+  createAward,
+  updateAward,
+  getCategories,
+  softDeleteAward,
 };

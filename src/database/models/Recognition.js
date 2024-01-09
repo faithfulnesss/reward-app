@@ -2,10 +2,10 @@ const mongoose = require("mongoose");
 const Employee = require("./Employee");
 
 const RecognitionSchema = new mongoose.Schema({
-  sender: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
-  receiver: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
-  points: Number,
-  value: {
+  Sender: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
+  Receiver: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
+  Points: Number,
+  Value: {
     type: String,
     enum: [
       "Trust",
@@ -18,7 +18,7 @@ const RecognitionSchema = new mongoose.Schema({
       "Unleash your Ambitions",
     ],
   },
-  createdAt: { type: Date, default: Date.now },
+  CreatedAt: { type: Date, default: Date.now },
 });
 
 // not sure how to implement this correctly
@@ -27,26 +27,26 @@ const RecognitionSchema = new mongoose.Schema({
 // Employee's model
 RecognitionSchema.post("save", async function (doc) {
   try {
-    const sender = await Employee.findById(doc.sender);
+    const sender = await Employee.findById(doc.Sender);
 
     if (sender.Role !== "Employee") {
-      if (sender.ManagerBalance >= doc.points) {
-        update = { $inc: { ManagerBalance: -doc.points } };
+      if (sender.ManagerBalance >= doc.Points) {
+        update = { $inc: { ManagerBalance: -doc.Points } };
       } else {
-        const difference = doc.points - sender.ManagerBalance;
+        const difference = doc.Points - sender.ManagerBalance;
         update = {
           $set: { ManagerBalance: 0 },
           $inc: { Balance: -difference },
         };
       }
     } else {
-      update = { $inc: { Balance: -doc.points } };
+      update = { $inc: { Balance: -doc.Points } };
     }
 
-    await Employee.findByIdAndUpdate(doc.sender, update);
+    await Employee.findByIdAndUpdate(doc.Sender, update);
 
-    await Employee.findByIdAndUpdate(doc.receiver, {
-      $inc: { Balance: doc.points },
+    await Employee.findByIdAndUpdate(doc.Receiver, {
+      $inc: { Balance: doc.Points },
     });
   } catch (error) {
     console.error("An error occurred:", error);

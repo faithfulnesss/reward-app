@@ -3,11 +3,14 @@ const mongoose = require("mongoose");
 const awardSchema = new mongoose.Schema({
   Type: {
     type: String,
-    enum: ["HR & Business", "Employer Brand", "Talent Acquisition"],
   },
   Name: String,
-  Stars: Number,
+  Points: Number,
   Details: String,
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const AwardModel = mongoose.model("Award", awardSchema);
