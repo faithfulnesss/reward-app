@@ -101,19 +101,19 @@ module.exports = (role) => {
             text: "View Leaderboard",
           },
           style: "primary",
-          value: "click_view_leaderboard",
+          action_id: "open_leaderboard",
         },
       },
       {
         type: "divider",
       },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: role === "HR" ? "*Admin*\n\nManage your employees" : " ",
-        },
-      },
+      // {
+      //   type: "section",
+      //   text: {
+      //     type: "mrkdwn",
+      //     text: role === "HR" ? "*Admin*\n\nManage your employees" : " ",
+      //   },
+      // },
     ],
   };
 };

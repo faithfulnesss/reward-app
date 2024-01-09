@@ -23,17 +23,19 @@ module.exports = (rewards, balance) => {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `*${reward.Name}* - ${reward.Price} points\n${reward.Description}`,
+          text: `*${reward.Name}* - ${reward.Points} points\n${
+            reward.Description ? reward.Description : ""
+          }`,
         },
-        accessory: reward.Image
+        accessory: reward.URL
           ? {
               type: "image",
-              image_url: reward.Image,
+              image_url: reward.URL,
               alt_text: reward.Name,
             }
           : undefined,
       },
-      balance >= reward.Price
+      balance >= reward.Points
         ? {
             type: "actions",
             elements: [
@@ -45,8 +47,8 @@ module.exports = (rewards, balance) => {
                   text: "Pick",
                   emoji: true,
                 },
-                value: reward.Name,
-                action_id: "click_pick_reward",
+                value: reward._id,
+                action_id: "pick_reward",
               },
             ],
           }
@@ -56,7 +58,7 @@ module.exports = (rewards, balance) => {
               {
                 type: "mrkdwn",
                 text: `*You need ${
-                  reward.Price - balance
+                  reward.Points - balance
                 } more points to pick this reward*`,
               },
             ],

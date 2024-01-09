@@ -117,7 +117,7 @@ module.exports = (balance) => {
           type: "static_select",
           placeholder: {
             type: "plain_text",
-            text: "Select hashtags",
+            text: "Select values",
             emoji: true,
           },
           options: values.map((value) => {
@@ -134,7 +134,7 @@ module.exports = (balance) => {
         },
         label: {
           type: "plain_text",
-          text: "Hashtags",
+          text: "Values",
           emoji: true,
         },
         optional: false,

@@ -1,4 +1,4 @@
-const config = require("../../config");
+const config = require("../config");
 const { Client } = require("@notionhq/client");
 
 const notion = new Client({

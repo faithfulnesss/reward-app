@@ -10,6 +10,7 @@ const config = {
   employeesDbId: process.env.EMPLOYEES_DB_ID,
   channelId: process.env.CHANNEL_ID,
   awardsDbId: process.env.AWARDS_DB_ID,
+  awardRequestsDbId: process.env.AWARD_REQUESTS_DB_ID,
 };
 
 module.exports = config;
