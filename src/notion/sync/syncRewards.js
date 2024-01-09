@@ -1,46 +1,60 @@
-require("dotenv").config();
-const notion = require("../client");
-const Reward = require("../../database/models/Reward");
+const config = require("../../config");
+const notionService = require("../services/notionService");
+const rewardRepository = require("../../database/repositories/rewardRepository");
 const connectDB = require("../../database/connect");
 
-// code for syncing the Rewards records as the image
-// for the Reward in notion is accessible with speicific
-// AWS token for one hour only
-// have been using this code to test the syncRewards function
-// and display the Rewards
-// in the future might impelement it in the syncService
-
-async function processReward(page) {
-  const { Name, Price, Value, Description } = page.properties;
-  const imageBlock = await notion.blocks.children.list({ block_id: page.id });
-  return {
-    Name: Name?.title[0]?.plain_text,
-    Image: imageBlock?.results[0]?.image?.file?.url,
-    Price: Price?.number,
-    Value: Value?.rich_text[0]?.plain_text,
-    Description: Description?.rich_text[0]?.plain_text,
-  };
-}
+// sync logic
+// 1. get all rewards from notion
+// 2. get all rewards from database
+// 3. compare rewards from notion and database
+// 4. if reward from notion is not in database - create it
+// 5. if reward from notion is in database - update it
+// 6. if reward from database is not in notion - delete it
 
 async function syncRewards() {
-  const databaseId = process.env.REWARDS_DB_ID;
-
   try {
-    const database = await notion.databases.query({ database_id: databaseId });
-    const rewards = await Promise.all(database.results.map(processReward));
+    const notionRecords = (
+      await notionService.getNotionRecords(config.rewardsDbId)
+    ).map((page) => parseNotionRewards(page));
 
-    const bulkOps = rewards.map((reward) => ({
-      updateOne: {
-        filter: { Name: reward.Name },
-        update: reward,
-        upsert: true,
-      },
-    }));
+    const databaseRewards = await rewardRepository.getRewards();
 
-    await Reward.bulkWrite(bulkOps);
+    for (const record of notionRecords) {
+      const databaseRecord = databaseRewards.find(
+        (reward) => reward.Name === record.Name
+      );
+
+      if (!databaseRecord) {
+        await rewardRepository.createReward(record);
+      } else if (databaseRecord) {
+        await rewardRepository.updateReward(databaseRecord._id, record);
+      }
+    }
+
+    for (const record of databaseRewards) {
+      const notionRecord = notionRecords.find(
+        (reward) => reward.Name === record.Name
+      );
+
+      if (!notionRecord) {
+        await rewardRepository.deleteReward(record._id);
+      }
+    }
+    return;
   } catch (error) {
-    console.error("Error in syncRewards:", error);
+    console.error(error);
   }
 }
+
+const parseNotionRewards = (page) => {
+  const { Name, Points, Value, Description, URL } = page.properties;
+  return {
+    Name: Name?.title[0]?.plain_text,
+    Points: Points?.number,
+    Value: Value?.rich_text[0]?.plain_text,
+    Description: Description?.rich_text[0]?.plain_text,
+    URL: URL?.url,
+  };
+};
 
 module.exports = syncRewards;

@@ -1,64 +1,79 @@
-const app = require("../../slack/client");
-const notion = require("../client");
-require("dotenv").config();
-const connectDB = require("../../database/connect");
-const Employee = require("../../database/models/Employee");
+const config = require("../../config");
+const notionService = require("../services/notionService");
+const employeeRepository = require("../../database/repositories/employeeRepository");
+const connect = require("../../database/connect");
 
-// draft code to understand how to work with notion records
+// sync logic
+// 1. get all employees from notion
+// 2. get all employees from database
+// 3. compare employees from notion and database
+// 4. if employee from notion is not in database - create it
+// 5. if employee from notion is in database and has different
+// role or team - update it
 
-async function fetchNotionEmployees() {
-  const notion_records = await notion.databases.query({
-    database_id: process.env.EMPLOYEES_DB_ID,
-  });
-
-  return notion_records.results.map((page) => {
-    const { Name, SlackID, Role, Balance } = page.properties;
-    return {
-      name: Name?.title[0]?.plain_text,
-      slack_id: SlackID?.rich_text[0]?.plain_text,
-      role: Role?.select?.name,
-      balance: Balance?.number,
-    };
-  });
-}
-
-function getNewEmployees(dbEmployees, notionEmployees) {
-  return dbEmployees.filter(
-    (employee) =>
-      !notionEmployees.some((ne) => ne.slack_id === employee.slack_id)
-  );
-}
-
-async function createNotionRecords(newEmployees) {
-  const createEmployeePromises = newEmployees.map(async (employee) => {
-    try {
-      await notion.pages.create({
-        parent: { database_id: process.env.EMPLOYEES_DB_ID },
-        properties: {
-          Name: { title: [{ text: { content: employee.name } }] },
-          SlackID: { rich_text: [{ text: { content: employee.slack_id } }] },
-          Role: { select: { name: employee.role } },
-          Balance: { number: employee.balance },
-        },
-      });
-    } catch (error) {
-      console.error(`Error creating employee record: ${error}`);
-    }
-  });
-
-  await Promise.all(createEmployeePromises);
-}
-
-async function syncEmployees() {
+const syncEmployees = async () => {
   try {
-    const [employees, notionEmployees] = await Promise.all([
-      Employee.find(),
-      fetchNotionEmployees(),
-    ]);
+    const notionEmployees = (
+      await notionService.getNotionRecords(config.employeesDbId)
+    ).map((page) => parseNotionEmployee(page));
 
-    const newEmployees = getNewEmployees(employees, notionEmployees);
-    await createNotionRecords(newEmployees);
+    const databaseEmployees = await employeeRepository.getEmployees();
+
+    for (const employee of databaseEmployees) {
+      const notionRecord = notionEmployees.find(
+        (notionEmployee) => notionEmployee.SlackID === employee.SlackID
+      );
+
+      if (!notionRecord) {
+        await notionService.createNotionRecord(
+          config.employeesDbId,
+          mapNotionEmployee(employee)
+        );
+      } else if (
+        notionRecord.Role !== employee.Role ||
+        notionRecord.Team !== employee.Team
+      ) {
+        await employeeRepository.updateEmployee(
+          { SlackID: employee.SlackID },
+          {
+            Role: notionRecord.Role,
+            Team: notionRecord.Team,
+          }
+        );
+      }
+    }
   } catch (error) {
-    console.error(`Error in syncEmployees: ${error.message}`);
+    console.error(error);
   }
+};
+
+const parseNotionEmployee = (page) => {
+  const { Name, SlackID, Role, Team, Balance } = page.properties;
+  return {
+    Name: Name?.title[0]?.plain_text,
+    SlackID: SlackID?.rich_text[0]?.plain_text,
+    Role: Role?.select?.name,
+    Team: Team?.select?.name,
+    Balance: Balance?.number,
+  };
+};
+
+const mapNotionEmployee = (employee) => {
+  return {
+    Name: { title: [{ text: { content: employee.Name } }] },
+    SlackID: {
+      rich_text: [{ text: { content: employee.SlackID } }],
+    },
+    Role: { select: { name: employee.Role } },
+    Team: { select: { name: employee.Team } },
+  };
+};
+
+async function main() {
+  connect();
+  await syncEmployees();
 }
+
+main();
+
+module.exports = syncEmployees;
