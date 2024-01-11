@@ -1,21 +1,21 @@
+const logger = require("../../utils/logger");
 const config = require("../../config");
-const app = require("../client");
-const employeesService = require("../../database/repositories/employeeRepository");
-const connect = require("../../database/connect");
 
-async function getChannelMembers(app) {
+const employeesService = require("../../database/repositories/employeeRepository");
+
+async function getChannelMembers(client, channelId) {
   try {
     // SlackIDs of the members are being fetched from the specific channel
     // in the future channelId will contain obrio-general channel id
-    const result = await app.client.conversations.members({
-      channel: config.channelId,
+    const result = await client.client.conversations.members({
+      channel: channelId,
       limit: 1000,
     });
 
     const members = [];
 
     for (const memberId of result.members) {
-      const { user } = await app.client.users.info({ user: memberId });
+      const { user } = await client.client.users.info({ user: memberId });
 
       members.push(user);
     }
@@ -26,9 +26,9 @@ async function getChannelMembers(app) {
   }
 }
 
-async function createMissingEmployees() {
+async function createMissingEmployees(client) {
   try {
-    const channelMembers = await getChannelMembers(app);
+    const channelMembers = await getChannelMembers(client, config.channelId);
 
     for (const member of channelMembers) {
       const slackId = member.id;
@@ -36,6 +36,10 @@ async function createMissingEmployees() {
       const employee = await employeesService.getEmployee({ SlackID: slackId });
 
       if (!employee) {
+        logger.info(
+          { SlackID: slackId, Name: member.profile.real_name },
+          "Creating missing employee"
+        );
         await employeesService.createEmployee(
           slackId,
           member.profile.real_name
@@ -46,14 +50,6 @@ async function createMissingEmployees() {
     console.error(error);
   }
 }
-
-// async function main() {
-//   connect();
-
-//   await createMissingEmployees();
-// }
-
-// main();
 
 module.exports = {
   getChannelMembers,

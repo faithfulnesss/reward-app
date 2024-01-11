@@ -41,6 +41,11 @@ async function createRecognitions(
   return createdRecognitions.length === receiverSlackIDs.length;
 }
 
+async function getRecognitions(filter) {
+  const recognitions = await Recognition.find(filter || {});
+  return recognitions;
+}
+
 module.exports = {
   createRecognitions,
 };
