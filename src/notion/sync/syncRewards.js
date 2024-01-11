@@ -1,7 +1,6 @@
 const config = require("../../config");
 const notionService = require("../services/notionService");
 const rewardRepository = require("../../database/repositories/rewardRepository");
-const connectDB = require("../../database/connect");
 
 // sync logic
 // 1. get all rewards from notion
@@ -37,7 +36,7 @@ async function syncRewards() {
       );
 
       if (!notionRecord) {
-        await rewardRepository.deleteReward(record._id);
+        await rewardRepository.softDeleteReward(record._id);
       }
     }
     return;

@@ -1,7 +1,6 @@
 const config = require("../../config");
 const notionService = require("../services/notionService");
 const employeeRepository = require("../../database/repositories/employeeRepository");
-const connect = require("../../database/connect");
 
 // sync logic
 // 1. get all employees from notion
@@ -68,12 +67,5 @@ const mapNotionEmployee = (employee) => {
     Team: { select: { name: employee.Team } },
   };
 };
-
-async function main() {
-  connect();
-  await syncEmployees();
-}
-
-main();
 
 module.exports = syncEmployees;

@@ -1,9 +1,9 @@
 const config = require("../../config");
 const notionService = require("../services/notionService");
-const awardRequestRepository = require("../../database/repositories/awardRequestRepository");
-const awardRepository = require("../../database/repositories/awardRepository");
+const rewardRequestRepository = require("../../database/repositories/rewardRequestRepository");
+const rewardRepository = require("../../database/repositories/rewardRepository");
 const employeeRepository = require("../../database/repositories/employeeRepository");
-const connectDB = require("../../database/connect");
+
 // sync logic
 // 1. get all employees from notion
 // 2. get all employees from database
@@ -12,56 +12,56 @@ const connectDB = require("../../database/connect");
 // 5. if employee from notion is in database and has different
 // role or team - update it
 
-const syncAwardRequests = async () => {
+const syncRewardRequests = async () => {
   try {
-    const notionAwardRequests = (
-      await notionService.getNotionRecords(config.awardRequestsDbId)
-    ).map((page) => parseNotionAwardRequests(page));
+    const notionRewardRequests = (
+      await notionService.getNotionRecords(config.rewardRequestsDbId)
+    ).map((page) => parseNotionRewardRequests(page));
 
-    const databaseAwardRequests =
-      await awardRequestRepository.getAwardRequests();
+    const databaseRewardRequests =
+      await rewardRequestRepository.getRewardRequests();
 
-    for (const notionRecord of notionAwardRequests) {
-      const awardRequest = databaseAwardRequests.find(
-        (awardRequest) => awardRequest._id.toString() === notionRecord.ID
+    for (const notionRecord of notionRewardRequests) {
+      const rewardRequest = databaseRewardRequests.find(
+        (rewardRequest) => rewardRequest._id.toString() === notionRecord.ID
       );
-      if (awardRequest.Status !== notionRecord.Status) {
-        await awardRequestRepository.updateAwardRequest(awardRequest._id, {
+      if (rewardRequest.Status !== notionRecord.Status) {
+        await rewardRequestRepository.updateRewardRequest(rewardRequest._id, {
           Status: notionRecord.Status,
         });
-        if (notionRecord.Status === "Approved") {
+        if (notionRecord.Status === "Declined") {
           const employee = await employeeRepository.getEmployee({
-            _id: awardRequest.Employee,
+            _id: rewardRequest.Employee,
           });
-          const award = await awardRepository.getAward({
-            _id: awardRequest.Award,
+          const reward = await rewardRepository.getReward({
+            _id: rewardRequest.Reward,
           });
           await employeeRepository.updateEmployee(
             { _id: employee._id },
             {
-              Balance: employee.Balance + award.Points,
+              Balance: employee.Balance + reward.Points,
             }
           );
         }
       }
     }
 
-    for (const awardRequest of databaseAwardRequests) {
-      const notionRecord = notionAwardRequests.find(
-        (notionAwardRequest) =>
-          notionAwardRequest.ID === awardRequest._id.toString()
+    for (const rewardRequest of databaseRewardRequests) {
+      const notionRecord = notionRewardRequests.find(
+        (notionRewardRequest) =>
+          notionRewardRequest.ID === rewardRequest._id.toString()
       );
 
-      if (!notionRecord && awardRequest.Status === "Pending") {
-        const award = await awardRepository.getAward({
-          _id: awardRequest.Award,
+      if (!notionRecord && rewardRequest.Status === "Pending") {
+        const reward = await rewardRepository.getReward({
+          _id: rewardRequest.Reward,
         });
         const employee = await employeeRepository.getEmployee({
-          _id: awardRequest.Employee,
+          _id: rewardRequest.Employee,
         });
         await notionService.createNotionRecord(
-          config.awardRequestsDbId,
-          mapNotionAwardRequest(awardRequest, award, employee)
+          config.rewardRequestsDbId,
+          mapNotionRewardRequest(rewardRequest, reward, employee)
         );
       }
     }
@@ -70,32 +70,27 @@ const syncAwardRequests = async () => {
   }
 };
 
-const parseNotionAwardRequests = (page) => {
-  const { ID, Requester, Award, Status, Type } = page.properties;
+const parseNotionRewardRequests = (page) => {
+  const { ID, Requester, Reward, Points, Value, Status } = page.properties;
   return {
     ID: ID?.rich_text[0]?.plain_text,
     Requester: Requester?.title[0]?.plain_text,
-    Award: Award?.rich_text[0]?.plain_text,
+    Reward: Reward?.rich_text[0]?.plain_text,
     Status: Status?.select?.name,
-    Type: Type?.select?.name,
+    Points: Points?.number,
+    Value: Value?.rich_text[0]?.plain_text,
   };
 };
 
-const mapNotionAwardRequest = (awardRequest, award, employee) => {
+const mapNotionRewardRequest = (rewardRequest, reward, employee) => {
   return {
-    ID: { rich_text: [{ text: { content: awardRequest._id } }] },
+    ID: { rich_text: [{ text: { content: rewardRequest._id } }] },
     Requester: { title: [{ text: { content: employee.Name } }] },
-    Award: { rich_text: [{ text: { content: award.Name } }] },
-    Status: { select: { name: awardRequest.Status } },
-    Type: { select: { name: award.Type } },
+    Reward: { rich_text: [{ text: { content: reward.Name } }] },
+    Status: { select: { name: rewardRequest.Status } },
+    Points: { number: reward.Points },
+    Value: { rich_text: [{ text: { content: reward.Value } }] },
   };
 };
 
-async function main() {
-  connectDB();
-  await syncAwardRequests();
-}
-
-main();
-
-// module.exports = syncEmployees;
+module.exports = syncRewardRequests;

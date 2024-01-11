@@ -1,7 +1,14 @@
 const config = require("../../config");
 const notionService = require("../services/notionService");
 const awardRepository = require("../../database/repositories/awardRepository");
-const connect = require("../../database/connect");
+
+// sync logic
+// 1. get all awards from notion
+// 2. get all awards from database
+// 3. compare awards from notion and database
+// 4. if award from notion is not in database - create it
+// 5. if award from notion is in database - update it
+// 6. if award from database is not in notion - delete it
 
 async function syncAwards() {
   try {
@@ -29,7 +36,7 @@ async function syncAwards() {
       );
 
       if (!notionRecord) {
-        await awardRepository.deleteAward(record._id);
+        await awardRepository.softDeleteAward(record._id);
       }
     }
   } catch (error) {
@@ -46,12 +53,5 @@ const parseNotionAwards = (page) => {
     Details: Details?.rich_text[0]?.plain_text,
   };
 };
-
-async function main() {
-  connect();
-  await syncAwards();
-}
-
-main();
 
 module.exports = syncAwards;

@@ -3,14 +3,14 @@ const notionService = require("../services/notionService");
 const awardRequestRepository = require("../../database/repositories/awardRequestRepository");
 const awardRepository = require("../../database/repositories/awardRepository");
 const employeeRepository = require("../../database/repositories/employeeRepository");
-const connectDB = require("../../database/connect");
+
 // sync logic
-// 1. get all employees from notion
-// 2. get all employees from database
-// 3. compare employees from notion and database
-// 4. if employee from notion is not in database - create it
-// 5. if employee from notion is in database and has different
-// role or team - update it
+// 1. get all award requests from notion
+// 2. get all award requests from database
+// 3. compare award requests from notion and database
+// 4. if award request status changed to approved in notion
+// - update it in database and add points to the balance of the employee
+// 5. if award request from database is not in notion - add it to notion
 
 const syncAwardRequests = async () => {
   try {
@@ -91,11 +91,4 @@ const mapNotionAwardRequest = (awardRequest, award, employee) => {
   };
 };
 
-async function main() {
-  connectDB();
-  await syncAwardRequests();
-}
-
-main();
-
-// module.exports = syncEmployees;
+module.exports = syncAwardRequests;
