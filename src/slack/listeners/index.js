@@ -7,11 +7,11 @@ const recognition_submitted = require("./actions/recognitionSubmit");
 const open_leaderboard = require("./actions/openLeaderboard");
 
 module.exports = (app) => {
-  give_recognition(app);
-  pick_reward(app);
-  home_opened(app);
-  check_balance(app);
-  claim_award(app);
-  recognition_submitted(app);
-  open_leaderboard(app);
+    give_recognition(app);
+    pick_reward(app);
+    home_opened(app);
+    check_balance(app);
+    claim_award(app);
+    recognition_submitted(app);
+    open_leaderboard(app);
 };

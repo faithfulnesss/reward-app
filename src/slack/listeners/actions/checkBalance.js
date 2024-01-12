@@ -3,23 +3,25 @@ const employeesService = require("../../../database/repositories/employeeReposit
 const errorView = require("../../views/errorView");
 
 module.exports = (app) => {
-  app.action("click_check_balance", async ({ ack, body, client }) => {
-    await ack();
+    app.action("click_check_balance", async ({ ack, body, client }) => {
+        await ack();
 
-    try {
-      const balance = await employeesService.getEmployeeBalance(body.user.id);
+        try {
+            const balance = await employeesService.getEmployeeBalance(
+                body.user.id
+            );
 
-      await client.views.open({
-        trigger_id: body.trigger_id,
-        view: balanceView(balance),
-      });
-    } catch (error) {
-      console.error(error);
+            await client.views.open({
+                trigger_id: body.trigger_id,
+                view: balanceView(balance),
+            });
+        } catch (error) {
+            console.error(error);
 
-      await client.views.open({
-        trigger_id: body.trigger_id,
-        view: errorView("Something went wrong!"),
-      });
-    }
-  });
+            await client.views.open({
+                trigger_id: body.trigger_id,
+                view: errorView("Something went wrong!"),
+            });
+        }
+    });
 };

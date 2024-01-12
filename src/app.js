@@ -6,6 +6,6 @@ const schedule = require("./utils/scheduler");
 connectDB();
 
 (async () => {
-  await app.start(config.port);
-  await schedule(app);
+    await app.start(config.port);
+    await schedule(app);
 })();

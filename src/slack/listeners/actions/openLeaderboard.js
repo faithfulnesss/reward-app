@@ -4,49 +4,60 @@ const employeeRepository = require("../../../database/repositories/employeeRepos
 const PAGE_SIZE = 12;
 
 module.exports = (app) => {
-  app.action("open_leaderboard", async ({ ack, body, client }) => {
-    await ack();
-
-    const employees = await employeeRepository.getEmployees();
-
-    try {
-      await client.views.open({
-        trigger_id: body.trigger_id,
-        view: leaderboardView(employees, 1, PAGE_SIZE),
-      });
-    } catch (error) {
-      console.error(error);
-    }
-
-    app.action(
-      "leaderboard_previous",
-      async ({ ack, body, client, action }) => {
+    app.action("open_leaderboard", async ({ ack, body, client }) => {
         await ack();
+
+        const employees = await employeeRepository.getEmployees();
+
         try {
-          const currentPage = parseInt(action.value);
-
-          await client.views.update({
-            view_id: body.view.id,
-            view: leaderboardView(employees, currentPage, PAGE_SIZE),
-          });
+            await client.views.open({
+                trigger_id: body.trigger_id,
+                view: leaderboardView(employees, 1, PAGE_SIZE),
+            });
         } catch (error) {
-          console.error(error);
+            console.error(error);
         }
-      }
-    );
 
-    app.action("leaderboard_next", async ({ ack, body, client, action }) => {
-      await ack();
-      try {
-        const currentPage = parseInt(action.value);
+        app.action(
+            "leaderboard_previous",
+            async ({ ack, body, client, action }) => {
+                await ack();
+                try {
+                    const currentPage = parseInt(action.value);
 
-        await client.views.update({
-          view_id: body.view.id,
-          view: leaderboardView(employees, currentPage, PAGE_SIZE),
-        });
-      } catch (error) {
-        console.error(error);
-      }
+                    await client.views.update({
+                        view_id: body.view.id,
+                        view: leaderboardView(
+                            employees,
+                            currentPage,
+                            PAGE_SIZE
+                        ),
+                    });
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        );
+
+        app.action(
+            "leaderboard_next",
+            async ({ ack, body, client, action }) => {
+                await ack();
+                try {
+                    const currentPage = parseInt(action.value);
+
+                    await client.views.update({
+                        view_id: body.view.id,
+                        view: leaderboardView(
+                            employees,
+                            currentPage,
+                            PAGE_SIZE
+                        ),
+                    });
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        );
     });
-  });
 };

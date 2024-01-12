@@ -11,49 +11,49 @@ const rewardRepository = require("../../database/repositories/rewardRepository")
 // 6. if reward from database is not in notion - delete it
 
 async function syncRewards() {
-  try {
-    const notionRecords = (
-      await notionService.getNotionRecords(config.rewardsDbId)
-    ).map((page) => parseNotionRewards(page));
+    try {
+        const notionRecords = (
+            await notionService.getNotionRecords(config.rewardsDbId)
+        ).map((page) => parseNotionRewards(page));
 
-    const databaseRewards = await rewardRepository.getRewards();
+        const databaseRewards = await rewardRepository.getRewards();
 
-    for (const record of notionRecords) {
-      const databaseRecord = databaseRewards.find(
-        (reward) => reward.Name === record.Name
-      );
+        for (const record of notionRecords) {
+            const databaseRecord = databaseRewards.find(
+                (reward) => reward.Name === record.Name
+            );
 
-      if (!databaseRecord) {
-        await rewardRepository.createReward(record);
-      } else if (databaseRecord) {
-        await rewardRepository.updateReward(databaseRecord._id, record);
-      }
+            if (!databaseRecord) {
+                await rewardRepository.createReward(record);
+            } else if (databaseRecord) {
+                await rewardRepository.updateReward(databaseRecord._id, record);
+            }
+        }
+
+        for (const record of databaseRewards) {
+            const notionRecord = notionRecords.find(
+                (reward) => reward.Name === record.Name
+            );
+
+            if (!notionRecord) {
+                await rewardRepository.softDeleteReward(record._id);
+            }
+        }
+        return;
+    } catch (error) {
+        console.error(error);
     }
-
-    for (const record of databaseRewards) {
-      const notionRecord = notionRecords.find(
-        (reward) => reward.Name === record.Name
-      );
-
-      if (!notionRecord) {
-        await rewardRepository.softDeleteReward(record._id);
-      }
-    }
-    return;
-  } catch (error) {
-    console.error(error);
-  }
 }
 
 const parseNotionRewards = (page) => {
-  const { Name, Points, Value, Description, URL } = page.properties;
-  return {
-    Name: Name?.title[0]?.plain_text,
-    Points: Points?.number,
-    Value: Value?.rich_text[0]?.plain_text,
-    Description: Description?.rich_text[0]?.plain_text,
-    URL: URL?.url,
-  };
+    const { Name, Points, Value, Description, URL } = page.properties;
+    return {
+        Name: Name?.title[0]?.plain_text,
+        Points: Points?.number,
+        Value: Value?.rich_text[0]?.plain_text,
+        Description: Description?.rich_text[0]?.plain_text,
+        URL: URL?.url,
+    };
 };
 
 module.exports = syncRewards;
