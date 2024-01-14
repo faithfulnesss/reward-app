@@ -1,6 +1,4 @@
 const mongoose = require("mongoose");
-const Employee = require("./Employee");
-const Award = require("./Award");
 
 const RewardRequestSchema = new mongoose.Schema({
     Reward: { type: mongoose.Schema.Types.ObjectId, ref: "Reward" },

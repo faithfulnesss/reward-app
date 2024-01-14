@@ -9,11 +9,13 @@ const values = [
     ["unleash-your-ambitions", "Unleash your Ambitions"],
 ];
 
-module.exports = (balance) => {
+module.exports = (balance, managerBalance) => {
+    const wholeBalance = balance + (managerBalance || 0);
+
     return {
         type: "modal",
         callback_id: "give_recognition_submit",
-        private_metadata: balance.toString(),
+        private_metadata: wholeBalance.toString(),
         title: {
             type: "plain_text",
             text: "Give kudos",
@@ -39,12 +41,14 @@ module.exports = (balance) => {
             },
             {
                 type: "section",
-                fields: [
-                    {
-                        type: "mrkdwn",
-                        text: `*Current balance:* ${balance} stars`,
-                    },
-                ],
+                text: {
+                    type: "mrkdwn",
+                    text: `*Current balance:* ${balance} stars${
+                        managerBalance
+                            ? ` (including manager balance: ${managerBalance} stars)`
+                            : ""
+                    }`,
+                },
             },
             {
                 type: "divider",
@@ -56,7 +60,7 @@ module.exports = (balance) => {
                     type: "number_input",
                     is_decimal_allowed: false,
                     min_value: "0",
-                    max_value: `${balance}`,
+                    max_value: `${wholeBalance}`,
                     action_id: "amount",
                     placeholder: {
                         type: "plain_text",
@@ -75,11 +79,15 @@ module.exports = (balance) => {
                 type: "input",
                 block_id: "employees_input",
                 element: {
-                    type: "multi_users_select",
+                    type: "multi_conversations_select",
                     action_id: "employees",
                     placeholder: {
                         type: "plain_text",
                         text: "Press on a username in the drop-down to select a name.",
+                    },
+                    filter: {
+                        include: ["im"],
+                        exclude_bot_users: true,
                     },
                 },
                 label: {
@@ -87,6 +95,7 @@ module.exports = (balance) => {
                     text: ":bust_in_silhouette: Recipient",
                 },
             },
+
             {
                 type: "divider",
             },

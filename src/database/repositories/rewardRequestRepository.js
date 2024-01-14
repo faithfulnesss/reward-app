@@ -56,9 +56,74 @@ const updateRewardRequest = async (rewardRequestId, update) => {
     }
 };
 
+const getRewardRequestsCount = async (startDate, endDate) => {
+    try {
+        const count = await RewardRequest.countDocuments({
+            CreatedAt: {
+                $gte: startDate,
+                $lte: endDate,
+            },
+            Status: { $ne: "Rejected" },
+        });
+        return count;
+    } catch (error) {
+        logger.error(error);
+    }
+};
+
+const getListOfRewardRequests = async (startDate, endDate) => {
+    try {
+        const result = await RewardRequest.aggregate([
+            {
+                $match: {
+                    CreatedAt: {
+                        $gte: startDate,
+                        $lte: endDate,
+                    },
+                    Status: { $ne: "Rejected" },
+                },
+            },
+            {
+                $lookup: {
+                    from: "employees",
+                    localField: "Employee",
+                    foreignField: "_id",
+                    as: "EmployeeInfo",
+                },
+            },
+            {
+                $lookup: {
+                    from: "rewards",
+                    localField: "Reward",
+                    foreignField: "_id",
+                    as: "RewardInfo",
+                },
+            },
+            {
+                $addFields: {
+                    EmployeeName: { $arrayElemAt: ["$EmployeeInfo.Name", 0] },
+                    RewardName: { $arrayElemAt: ["$RewardInfo.Name", 0] },
+                },
+            },
+            {
+                $project: {
+                    EmployeeInfo: 0,
+                    RewardInfo: 0,
+                },
+            },
+        ]);
+
+        return result;
+    } catch (error) {
+        console.error(error);
+    }
+};
+
 module.exports = {
     getRewardRequests,
     getRewardRequest,
     createRewardRequest,
     updateRewardRequest,
+    getRewardRequestsCount,
+    getListOfRewardRequests,
 };

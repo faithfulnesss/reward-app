@@ -49,9 +49,135 @@ const updateAwardRequest = async (awardRequestId, update) => {
     }
 };
 
+const getAwardRequestsCount = async (startDate, endDate) => {
+    try {
+        const count = await AwardRequest.countDocuments({
+            CreatedAt: {
+                $gte: startDate,
+                $lte: endDate,
+            },
+            Status: { $ne: "Rejected" },
+        });
+        return count;
+    } catch (error) {
+        logger.error(error);
+    }
+};
+
+const getAwardRequestsDistributionByType = async (startDate, endDate) => {
+    try {
+        const totalCount = await AwardRequest.countDocuments({
+            CreatedAt: { $gte: startDate, $lte: endDate },
+            Status: { $ne: "Rejected" },
+        });
+
+        const result = await AwardRequest.aggregate([
+            {
+                $match: {
+                    CreatedAt: {
+                        $gte: startDate,
+                        $lte: endDate,
+                    },
+                    Status: { $ne: "Rejected" },
+                },
+            },
+            {
+                $lookup: {
+                    from: "awards",
+                    localField: "Award",
+                    foreignField: "_id",
+                    as: "award",
+                },
+            },
+            {
+                $unwind: "$award",
+            },
+            {
+                $group: {
+                    _id: "$award.Type",
+                    count: { $sum: 1 },
+                },
+            },
+            {
+                $project: {
+                    type: "$_id",
+                    _id: 0,
+                    percentage: {
+                        $multiply: [{ $divide: ["$count", totalCount] }, 100],
+                    },
+                },
+            },
+        ]);
+
+        return result;
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+const getAwardRequestsDistributionByName = async (startDate, endDate) => {
+    try {
+        const totalCount = await AwardRequest.countDocuments({
+            CreatedAt: { $gte: startDate, $lte: endDate },
+            Status: { $ne: "Rejected" },
+        });
+
+        const result = await AwardRequest.aggregate([
+            {
+                $match: {
+                    CreatedAt: {
+                        $gte: startDate,
+                        $lte: endDate,
+                    },
+                    Status: { $ne: "Rejected" },
+                },
+            },
+            {
+                $lookup: {
+                    from: "awards",
+                    localField: "Award",
+                    foreignField: "_id",
+                    as: "award",
+                },
+            },
+            {
+                $unwind: "$award",
+            },
+            {
+                $group: {
+                    _id: "$award.Name",
+                    count: { $sum: 1 },
+                },
+            },
+            {
+                $project: {
+                    name: "$_id",
+                    _id: 0,
+                    percentage: {
+                        $multiply: [{ $divide: ["$count", totalCount] }, 100],
+                    },
+                },
+            },
+            {
+                $sort: { percentage: -1 },
+            },
+            {
+                $limit: 5,
+            },
+        ]);
+
+        return result;
+    } catch (error) {
+        console.error(error);
+    }
+};
+
 module.exports = {
     getAwardRequests,
     getAwardRequest,
     createAwardRequest,
     updateAwardRequest,
+    getAwardRequestsCount,
+    getAwardRequestsDistributionByType,
+    getAwardRequestsDistributionByName,
 };
