@@ -7,9 +7,9 @@ module.exports = (app) => {
     app.action("open_leaderboard", async ({ ack, body, client }) => {
         await ack();
 
-        const employees = await employeeRepository.getEmployees();
-
         try {
+            var employees = await employeeRepository.getEmployees();
+
             await client.views.open({
                 trigger_id: body.trigger_id,
                 view: leaderboardView(employees, 1, PAGE_SIZE),

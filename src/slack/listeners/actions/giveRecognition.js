@@ -7,13 +7,18 @@ module.exports = (app) => {
         await ack();
 
         try {
-            const balance = await employeesService.getEmployeeBalance(
-                body.user.id
-            );
+            const employee = await employeesService.getEmployee({
+                SlackID: body.user.id,
+            });
 
             await client.views.open({
                 trigger_id: body.trigger_id,
-                view: giveRecognitionView(balance),
+                view: giveRecognitionView(
+                    employee.Balance,
+                    employee.Role !== "Employee"
+                        ? employee.ManagerBalance
+                        : null
+                ),
             });
         } catch (error) {
             console.error(error);

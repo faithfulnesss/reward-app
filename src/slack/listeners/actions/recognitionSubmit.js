@@ -1,7 +1,6 @@
 const employeesService = require("../../../database/repositories/employeeRepository");
 const errorView = require("../../views/errorView");
 const recognitionsService = require("../../../database/repositories/recognitionRepository");
-const { getChannelMembers } = require("../../sync/syncMembers");
 
 module.exports = (app) => {
     app.view("give_recognition_submit", async ({ ack, body, view, client }) => {
@@ -12,7 +11,7 @@ module.exports = (app) => {
                 amount: { value: points },
             },
             employees_input: {
-                employees: { selected_users: employees },
+                employees: { selected_conversations: employees },
             },
             message_input: {
                 message: { value: message },

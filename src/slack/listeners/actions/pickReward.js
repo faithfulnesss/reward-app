@@ -6,12 +6,11 @@ const employeesService = require("../../../database/repositories/employeeReposit
 module.exports = (app) => {
     app.action("click_pick_reward", async ({ ack, body, client }) => {
         await ack();
-
-        const balance = (
-            await employeesService.getEmployee({ SlackID: body.user.id })
-        ).Balance;
-
         try {
+            const balance = (
+                await employeesService.getEmployee({ SlackID: body.user.id })
+            ).Balance;
+
             const rewards = await rewardsRepository.getRewards();
             await client.views.open({
                 trigger_id: body.trigger_id,
