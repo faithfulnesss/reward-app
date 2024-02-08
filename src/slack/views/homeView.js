@@ -107,7 +107,7 @@ module.exports = (role) => {
         },
     ];
 
-    if (role === "HR" || role === "Admin") {
+    if (role === "HR") {
         blocks.push({
             type: "section",
             text: {
@@ -121,7 +121,7 @@ module.exports = (role) => {
                     text: "View Analytics",
                 },
                 style: "primary",
-                action_id: "open_analytics",
+                action_id: "check_analytics",
             },
         });
     }

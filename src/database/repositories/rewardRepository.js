@@ -1,12 +1,12 @@
 const Reward = require("../models/Reward");
-// const RewardRequest = require("../models/RewardRequest");
+const logger = require("../../utils/logger");
 
 const getReward = async (filter) => {
     try {
         const reward = await Reward.findOne(filter || {});
         return reward;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -15,7 +15,18 @@ const getRewards = async (filter) => {
         const rewards = await Reward.find(filter || { isDeleted: false });
         return rewards;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
+    }
+};
+
+const getRewardsSortedByPoints = async () => {
+    try {
+        const rewards = await Reward.find({ isDeleted: false }).sort({
+            Points: 1,
+        });
+        return rewards;
+    } catch (error) {
+        logger.error(error);
     }
 };
 
@@ -24,7 +35,7 @@ const deleteReward = async (rewardId) => {
         const reward = await Reward.deleteOne({ _id: rewardId });
         return reward;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -36,7 +47,7 @@ const softDeleteReward = async (rewardId) => {
         );
         return reward;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -45,7 +56,7 @@ const createReward = async (reward) => {
         const createdReward = await Reward.create(reward);
         return createdReward;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -57,13 +68,14 @@ const updateReward = async (rewardId, update) => {
         );
         return reward;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
 module.exports = {
     getReward,
     getRewards,
+    getRewardsSortedByPoints,
     createReward,
     deleteReward,
     updateReward,

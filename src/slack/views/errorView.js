@@ -3,7 +3,7 @@ module.exports = (errorMessage) => {
         type: "modal",
         title: {
             type: "plain_text",
-            text: "OBRIO Rewards App",
+            text: "Error",
         },
         blocks: [
             {

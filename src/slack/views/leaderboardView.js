@@ -1,4 +1,4 @@
-const createPaginatedView = require("./paginatedView");
+const { createPaginatedView } = require("./paginatedView");
 
 const renderLeaderboardItem = (employee, index, currentPage, pageSize) => ({
     type: "section",
@@ -6,15 +6,15 @@ const renderLeaderboardItem = (employee, index, currentPage, pageSize) => ({
         type: "mrkdwn",
         text: `*${index + 1 + (currentPage - 1) * pageSize}.* ${
             employee.Name
-        } - ${employee.Balance} :star:`,
+        } - ${employee.Team} - ${employee.Balance} :star:`,
     },
 });
 
-const leaderboardView = (employees, currentPage, pageSize) => {
+const leaderboardView = (employees, currentPage) => {
     return createPaginatedView(
         employees,
         currentPage,
-        pageSize,
+        12,
         renderLeaderboardItem,
         "Leaderboard",
         "leaderboard"

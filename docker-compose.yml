@@ -1,0 +1,29 @@
+version: "3.8"
+services:
+    app:
+        build: .
+        ports:
+            - "3000:3000"
+        depends_on:
+            - mongo
+        env_file:
+            - ./.env
+        volumes:
+            - "./logs:/app/logs"
+        networks:
+            - app-network
+    mongo:
+        image: mongo
+        ports:
+            - "27018:27017"
+        volumes:
+            - "./data:/data/db"
+        networks:
+            - app-network
+volumes:
+    logs:
+    data:
+
+networks:
+    app-network:
+        driver: bridge

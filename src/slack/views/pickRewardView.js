@@ -3,7 +3,7 @@ module.exports = (rewards, balance) => {
         type: "modal",
         title: {
             type: "plain_text",
-            text: "My App",
+            text: "Rewards",
             emoji: true,
         },
         close: {

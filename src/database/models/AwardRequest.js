@@ -8,6 +8,7 @@ const AwardRequestSchema = new mongoose.Schema({
         enum: ["Pending", "Approved", "Rejected"],
         default: "Pending",
     },
+    Responsible: { type: String },
     CreatedAt: { type: Date, default: Date.now },
 });
 

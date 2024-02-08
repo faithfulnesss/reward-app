@@ -1,6 +1,7 @@
 const RewardRequest = require("../models/RewardRequest");
 const rewardRepository = require("./rewardRepository");
 const employeeRepository = require("./employeeRepository");
+const logger = require("../../utils/logger");
 
 const createRewardRequest = async (employeeId, rewardId) => {
     try {
@@ -22,7 +23,7 @@ const createRewardRequest = async (employeeId, rewardId) => {
         });
         return createdRewardRequest;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -31,7 +32,7 @@ const getRewardRequests = async (filter) => {
         const rewardRequests = await RewardRequest.find(filter || {});
         return rewardRequests;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -40,7 +41,7 @@ const getRewardRequest = async (filter) => {
         const rewardRequest = await RewardRequest.findOne(filter || {});
         return rewardRequest;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -52,7 +53,7 @@ const updateRewardRequest = async (rewardRequestId, update) => {
         );
         return updatedRewardRequest;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -71,7 +72,7 @@ const getRewardRequestsCount = async (startDate, endDate) => {
     }
 };
 
-const getListOfRewardRequests = async (startDate, endDate) => {
+const getRewardRequestsList = async (startDate, endDate) => {
     try {
         const result = await RewardRequest.aggregate([
             {
@@ -115,7 +116,7 @@ const getListOfRewardRequests = async (startDate, endDate) => {
 
         return result;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -125,5 +126,5 @@ module.exports = {
     createRewardRequest,
     updateRewardRequest,
     getRewardRequestsCount,
-    getListOfRewardRequests,
+    getRewardRequestsList,
 };

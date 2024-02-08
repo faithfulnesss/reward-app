@@ -1,4 +1,5 @@
 const notion = require("../client");
+const logger = require("../../utils/logger");
 
 async function getNotionRecords(databaseId, filter) {
     let records = [];
@@ -22,7 +23,7 @@ async function getNotionRecords(databaseId, filter) {
 
         return records;
     } catch (error) {
-        console.error(`Failed to get records from Notion: ${error}`);
+        logger.error(`Failed to get records from Notion: ${error}`);
     }
 
     return records;
@@ -35,7 +36,7 @@ async function createNotionRecord(databaseId, properties) {
             properties: properties,
         });
     } catch (error) {
-        console.error(`Error creating record: ${error}`);
+        logger.error(`Error creating record: ${error}`);
     }
 }
 

@@ -3,7 +3,7 @@ module.exports = (balance) => {
         type: "modal",
         title: {
             type: "plain_text",
-            text: "Obrio Rewards App",
+            text: "Balance",
         },
         close: {
             type: "plain_text",

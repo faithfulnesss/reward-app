@@ -1,7 +1,7 @@
 const logger = require("../../utils/logger");
 const config = require("../../config");
 
-const employeesService = require("../../database/repositories/employeeRepository");
+const employeeRepository = require("../../database/repositories/employeeRepository");
 
 async function getChannelMembers(client, channelId) {
     try {
@@ -22,7 +22,7 @@ async function getChannelMembers(client, channelId) {
 
         return members;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 }
 
@@ -36,7 +36,7 @@ async function createMissingEmployees(client) {
         for (const member of channelMembers) {
             const slackId = member.id;
 
-            const employee = await employeesService.getEmployee({
+            const employee = await employeeRepository.getEmployee({
                 SlackID: slackId,
             });
 
@@ -45,7 +45,7 @@ async function createMissingEmployees(client) {
                     { SlackID: slackId, Name: member.profile.real_name },
                     "Creating missing employee"
                 );
-                await employeesService.createEmployee(
+                await employeeRepository.createEmployee(
                     slackId,
                     member.profile.real_name
                 );

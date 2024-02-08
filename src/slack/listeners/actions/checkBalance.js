@@ -1,13 +1,14 @@
+const { employeeRepository } = require("../../../database/repositories");
 const balanceView = require("../../views/balanceView");
-const employeesService = require("../../../database/repositories/employeeRepository");
-const errorView = require("../../views/errorView");
+const openErrorView = require("./openErrorView");
+const logger = require("../../../utils/logger");
 
 module.exports = (app) => {
     app.action("click_check_balance", async ({ ack, body, client }) => {
-        await ack();
-
         try {
-            const balance = await employeesService.getEmployeeBalance(
+            await ack();
+
+            const balance = await employeeRepository.getEmployeeBalance(
                 body.user.id
             );
 
@@ -16,12 +17,9 @@ module.exports = (app) => {
                 view: balanceView(balance),
             });
         } catch (error) {
-            console.error(error);
+            logger.error(error);
 
-            await client.views.open({
-                trigger_id: body.trigger_id,
-                view: errorView("Something went wrong!"),
-            });
+            await openErrorView(client, body.trigger_id);
         }
     });
 };

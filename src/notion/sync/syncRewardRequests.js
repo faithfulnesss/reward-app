@@ -1,8 +1,11 @@
-const config = require("../../config");
 const notionService = require("../services/notionService");
-const rewardRequestRepository = require("../../database/repositories/rewardRequestRepository");
-const rewardRepository = require("../../database/repositories/rewardRepository");
-const employeeRepository = require("../../database/repositories/employeeRepository");
+const {
+    rewardRequestRepository,
+    rewardRepository,
+    employeeRepository,
+} = require("../../database/repositories");
+const logger = require("../../utils/logger");
+const config = require("../../config");
 
 // sync logic
 // 1. get all employees from notion
@@ -26,25 +29,39 @@ const syncRewardRequests = async () => {
                 (rewardRequest) =>
                     rewardRequest._id.toString() === notionRecord.ID
             );
-            if (rewardRequest.Status !== notionRecord.Status) {
+            if (rewardRequest && rewardRequest.Status !== notionRecord.Status) {
+                logger.info(
+                    `Updating reward request ${rewardRequest._id} status to ${notionRecord.Status}`
+                );
                 await rewardRequestRepository.updateRewardRequest(
                     rewardRequest._id,
                     {
                         Status: notionRecord.Status,
                     }
                 );
-                if (notionRecord.Status === "Declined") {
+                if (notionRecord.Status === "Rejected") {
                     const employee = await employeeRepository.getEmployee({
                         _id: rewardRequest.Employee,
                     });
                     const reward = await rewardRepository.getReward({
                         _id: rewardRequest.Reward,
                     });
+                    logger.info(
+                        `Updating employee ${employee._id} balance\n
+                        Balance of employee ${employee.Name} is ${employee.Balance}`
+                    );
                     await employeeRepository.updateEmployee(
                         { _id: employee._id },
                         {
-                            Balance: employee.Balance + reward.Points,
+                            $inc: { Balance: reward.Points },
                         }
+                    );
+                    const updatedEmployee =
+                        await employeeRepository.getEmployee({
+                            _id: employee._id,
+                        });
+                    logger.info(
+                        `Balance of employee ${updatedEmployee.Name} is ${updatedEmployee.Balance} after update`
                     );
                 }
             }
@@ -57,6 +74,10 @@ const syncRewardRequests = async () => {
             );
 
             if (!notionRecord && rewardRequest.Status === "Pending") {
+                logger.info(rewardRequest);
+                logger.info(
+                    `Creating notion record for reward request ${rewardRequest._id}`
+                );
                 const reward = await rewardRepository.getReward({
                     _id: rewardRequest.Reward,
                 });
@@ -70,7 +91,7 @@ const syncRewardRequests = async () => {
             }
         }
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -93,7 +114,7 @@ const mapNotionRewardRequest = (rewardRequest, reward, employee) => {
         Reward: { rich_text: [{ text: { content: reward.Name } }] },
         Status: { select: { name: rewardRequest.Status } },
         Points: { number: reward.Points },
-        Value: { rich_text: [{ text: { content: reward.Value } }] },
+        Value: { rich_text: [{ text: { content: reward.Value ?? "" } }] },
     };
 };
 

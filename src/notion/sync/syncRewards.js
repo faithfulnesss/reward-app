@@ -1,6 +1,7 @@
-const config = require("../../config");
 const notionService = require("../services/notionService");
-const rewardRepository = require("../../database/repositories/rewardRepository");
+const { rewardRepository } = require("../../database/repositories");
+const logger = require("../../utils/logger");
+const config = require("../../config");
 
 // sync logic
 // 1. get all rewards from notion
@@ -24,8 +25,10 @@ async function syncRewards() {
             );
 
             if (!databaseRecord) {
+                logger.info(`Creating reward ${record.Name}`);
                 await rewardRepository.createReward(record);
             } else if (databaseRecord) {
+                logger.info(`Updating reward ${record.Name}`);
                 await rewardRepository.updateReward(databaseRecord._id, record);
             }
         }
@@ -36,12 +39,13 @@ async function syncRewards() {
             );
 
             if (!notionRecord) {
+                logger.info(`Deleting reward ${record.Name}`);
                 await rewardRepository.softDeleteReward(record._id);
             }
         }
         return;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 }
 

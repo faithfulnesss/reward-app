@@ -44,7 +44,7 @@ module.exports = (categories, selected_category, awards_by_category) => {
         type: "modal",
         title: {
             type: "plain_text",
-            text: "Obrio Rewards App",
+            text: "Activities",
         },
         blocks: [
             {

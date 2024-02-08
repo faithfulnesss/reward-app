@@ -3,7 +3,6 @@ const home_opened = require("./actions/homeOpened");
 const pick_reward = require("./actions/pickReward");
 const check_balance = require("./actions/checkBalance");
 const claim_award = require("./actions/claimAward");
-const recognition_submitted = require("./actions/recognitionSubmit");
 const open_leaderboard = require("./actions/openLeaderboard");
 const check_analytics = require("./actions/checkAnalytics");
 
@@ -13,7 +12,6 @@ module.exports = (app) => {
     home_opened(app);
     check_balance(app);
     claim_award(app);
-    recognition_submitted(app);
     open_leaderboard(app);
     check_analytics(app);
 };

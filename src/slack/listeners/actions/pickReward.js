@@ -1,23 +1,29 @@
+const {
+    rewardRepository,
+    employeeRepository,
+    rewardRequestRepository,
+} = require("../../../database/repositories");
 const pickRewardView = require("../../views/pickRewardView");
-const rewardRequestRepository = require("../../../database/repositories/rewardRequestRepository");
-const rewardsRepository = require("../../../database/repositories/rewardRepository");
-const employeesService = require("../../../database/repositories/employeeRepository");
+const openErrorView = require("./openErrorView");
+const logger = require("../../../utils/logger");
 
 module.exports = (app) => {
     app.action("click_pick_reward", async ({ ack, body, client }) => {
         await ack();
         try {
             const balance = (
-                await employeesService.getEmployee({ SlackID: body.user.id })
+                await employeeRepository.getEmployee({ SlackID: body.user.id })
             ).Balance;
 
-            const rewards = await rewardsRepository.getRewards();
+            const rewards = await rewardRepository.getRewardsSortedByPoints();
+
             await client.views.open({
                 trigger_id: body.trigger_id,
                 view: pickRewardView(rewards, balance),
             });
         } catch (error) {
-            console.error(error);
+            logger.error(error);
+            await openErrorView(client, body.trigger_id);
         }
     });
 
@@ -39,17 +45,11 @@ module.exports = (app) => {
                     view: sucessView,
                 });
             } else {
-                await client.views.update({
-                    view_id: body.view.id,
-                    view: errorView("Something went wrong!"),
-                });
+                await openErrorView(client, body.trigger_id);
             }
         } catch (error) {
-            console.error(error);
-            await client.views.open({
-                trigger_id: body.trigger_id,
-                view: errorView("Something went wrong!"),
-            });
+            logger.error(error);
+            await openErrorView(client, body.trigger_id);
         }
     });
 };
@@ -58,7 +58,7 @@ const sucessView = {
     type: "modal",
     title: {
         type: "plain_text",
-        text: "Obrio Rewards App",
+        text: "Rewards",
     },
     close: {
         type: "plain_text",

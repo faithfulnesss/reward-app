@@ -1,11 +1,12 @@
 const Award = require("../models/Award");
+const logger = require("../../utils/logger");
 
 const createAward = async (award) => {
     try {
         const createdAward = await Award.create(award);
         return createdAward;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -14,7 +15,7 @@ const getAward = async (filter) => {
         const award = await Award.findOne(filter || {});
         return award;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -23,7 +24,7 @@ const getAwards = async (filter) => {
         const awards = await Award.find(filter || { isDeleted: false });
         return awards;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -32,7 +33,7 @@ const getCategories = async () => {
         const categories = await Award.distinct("Type", { isDeleted: false });
         return categories;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -44,7 +45,7 @@ const updateAward = async (awardId, update) => {
         );
         return award;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -56,15 +57,13 @@ const softDeleteAward = async (awardId) => {
         );
         return award;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
 module.exports = {
     getAward,
     getAwards,
-    // getAwardsByCategory,
-    // getAwardByName,
     createAward,
     updateAward,
     getCategories,

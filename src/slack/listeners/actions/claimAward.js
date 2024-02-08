@@ -1,32 +1,33 @@
 const claimAwardView = require("../../views/claimAwardView");
-const awardsRepository = require("../../../database/repositories/awardRepository");
-const errorView = require("../../views/errorView");
-const awardRequestRepository = require("../../../database/repositories/awardRequestRepository");
+const openErrorView = require("./openErrorView");
+const {
+    awardRepository,
+    awardRequestRepository,
+} = require("../../../database/repositories");
+const logger = require("../../../utils/logger");
 
 module.exports = (app) => {
     app.action("click_claim_award", async ({ ack, body, client }) => {
-        await ack();
-
-        const categories = await awardsRepository.getCategories();
-
         try {
+            await ack();
+
+            const categories = await awardRepository.getCategories();
+
             await client.views.open({
                 trigger_id: body.trigger_id,
                 view: claimAwardView(categories),
             });
         } catch (error) {
-            await client.views.open({
-                trigger_id: body.trigger_id,
-                view: errorView("Something went wrong!"),
-            });
-            console.error(error);
+            logger.error(error);
+
+            await openErrorView(client, body.trigger_id);
         }
     });
 
     app.action("award_category_selected", async ({ ack, body, client }) => {
-        await ack();
-
         try {
+            await ack();
+
             const categories = body.view.blocks[0].elements[0].options.map(
                 (option) => {
                     return option.value;
@@ -37,7 +38,7 @@ module.exports = (app) => {
                 body.view.state.values.category_selector.award_category_selected
                     .selected_option;
 
-            const awards_by_category = await awardsRepository.getAwards({
+            const awards_by_category = await awardRepository.getAwards({
                 Type: selected_category.value,
             });
 
@@ -50,11 +51,9 @@ module.exports = (app) => {
                 ),
             });
         } catch (error) {
-            await client.views.open({
-                trigger_id: body.trigger_id,
-                view: errorView("Something went wrong!"),
-            });
-            console.error(error);
+            logger.error(error);
+
+            await openErrorView(client, body.trigger_id);
         }
     });
 
@@ -76,16 +75,12 @@ module.exports = (app) => {
                     view: successView,
                 });
             } else {
-                await client.views.update({
-                    view_id: body.view.id,
-                    view: errorView("Something went wrong!"),
-                });
+                await openErrorView(client, body.trigger_id);
             }
         } catch (error) {
-            await client.views.open({
-                trigger_id: body.trigger_id,
-                view: errorView("Something went wrong!"),
-            });
+            logger.error(error);
+
+            await openErrorView(client, body.trigger_id);
         }
     });
 };
@@ -94,7 +89,7 @@ const successView = {
     type: "modal",
     title: {
         type: "plain_text",
-        text: "Obrio Rewards App",
+        text: "Success",
     },
     close: {
         type: "plain_text",

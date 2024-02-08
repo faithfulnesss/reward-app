@@ -15,7 +15,10 @@ module.exports = (balance, managerBalance) => {
     return {
         type: "modal",
         callback_id: "give_recognition_submit",
-        private_metadata: wholeBalance.toString(),
+        private_metadata: JSON.stringify({
+            balance: balance,
+            managerBalance: managerBalance,
+        }),
         title: {
             type: "plain_text",
             text: "Give kudos",
@@ -43,11 +46,7 @@ module.exports = (balance, managerBalance) => {
                 type: "section",
                 text: {
                     type: "mrkdwn",
-                    text: `*Current balance:* ${balance} stars${
-                        managerBalance
-                            ? ` (including manager balance: ${managerBalance} stars)`
-                            : ""
-                    }`,
+                    text: `Current balance: _${balance}_ :star:\n\nAmount you would like to give to your colleagues as an employee.`,
                 },
             },
             {
@@ -60,7 +59,8 @@ module.exports = (balance, managerBalance) => {
                     type: "number_input",
                     is_decimal_allowed: false,
                     min_value: "0",
-                    max_value: `${wholeBalance}`,
+                    initial_value: "0",
+                    max_value: `${balance}`,
                     action_id: "amount",
                     placeholder: {
                         type: "plain_text",
@@ -72,6 +72,45 @@ module.exports = (balance, managerBalance) => {
                     text: ":1234: Amount",
                 },
             },
+            ...(managerBalance !== null
+                ? [
+                      { type: "divider" },
+                      {
+                          type: "section",
+                          text: {
+                              type: "mrkdwn",
+                              text: `Current manager balance: _${managerBalance}_ :star:\n\nAmount you would like to give to your colleagues as a manager.`,
+                          },
+                      },
+                  ]
+                : []),
+            ...(managerBalance !== null && managerBalance !== 0
+                ? [
+                      {
+                          type: "divider",
+                      },
+                      {
+                          type: "input",
+                          block_id: "manager_amount_input",
+                          element: {
+                              type: "number_input",
+                              is_decimal_allowed: false,
+                              min_value: "0",
+                              initial_value: "0",
+                              max_value: `${managerBalance}`,
+                              action_id: "manager_amount",
+                              placeholder: {
+                                  type: "plain_text",
+                                  text: "Enter the bonus amount you want to send from your manager balance",
+                              },
+                          },
+                          label: {
+                              type: "plain_text",
+                              text: ":1234: Amount",
+                          },
+                      },
+                  ]
+                : []),
             {
                 type: "divider",
             },

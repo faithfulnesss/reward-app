@@ -1,8 +1,11 @@
-const config = require("../../config");
 const notionService = require("../services/notionService");
-const awardRequestRepository = require("../../database/repositories/awardRequestRepository");
-const awardRepository = require("../../database/repositories/awardRepository");
-const employeeRepository = require("../../database/repositories/employeeRepository");
+const {
+    awardRepository,
+    employeeRepository,
+    awardRequestRepository,
+} = require("../../database/repositories");
+const logger = require("../../utils/logger");
+const config = require("../../config");
 
 // sync logic
 // 1. get all award requests from notion
@@ -26,7 +29,10 @@ const syncAwardRequests = async () => {
                 (awardRequest) =>
                     awardRequest._id.toString() === notionRecord.ID
             );
-            if (awardRequest.Status !== notionRecord.Status) {
+            if (awardRequest && awardRequest.Status !== notionRecord.Status) {
+                logger.info(
+                    `Updating award request ${awardRequest._id} status to ${notionRecord.Status}`
+                );
                 await awardRequestRepository.updateAwardRequest(
                     awardRequest._id,
                     {
@@ -40,11 +46,22 @@ const syncAwardRequests = async () => {
                     const award = await awardRepository.getAward({
                         _id: awardRequest.Award,
                     });
+                    logger.info(
+                        `Updating employee ${employee._id} balance\n
+                        Balance of employee ${employee.Name} is ${employee.Balance}`
+                    );
                     await employeeRepository.updateEmployee(
                         { _id: employee._id },
                         {
-                            Balance: employee.Balance + award.Points,
+                            $inc: { Balance: award.Points },
                         }
+                    );
+                    const updatedEmployee =
+                        await employeeRepository.getEmployee({
+                            _id: employee._id,
+                        });
+                    logger.info(
+                        `Balance of employee ${updatedEmployee.Name} is ${updatedEmployee.Balance} after update`
                     );
                 }
             }
@@ -57,6 +74,9 @@ const syncAwardRequests = async () => {
             );
 
             if (!notionRecord && awardRequest.Status === "Pending") {
+                logger.info(
+                    `Adding award request ${awardRequest._id} to notion`
+                );
                 const award = await awardRepository.getAward({
                     _id: awardRequest.Award,
                 });
@@ -70,7 +90,7 @@ const syncAwardRequests = async () => {
             }
         }
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -82,6 +102,7 @@ const parseNotionAwardRequests = (page) => {
         Award: Award?.rich_text[0]?.plain_text,
         Status: Status?.select?.name,
         Type: Type?.select?.name,
+        Responsible: Responsible?.rich_text[0]?.plain_text,
     };
 };
 
@@ -92,6 +113,9 @@ const mapNotionAwardRequest = (awardRequest, award, employee) => {
         Award: { rich_text: [{ text: { content: award.Name } }] },
         Status: { select: { name: awardRequest.Status } },
         Type: { select: { name: award.Type } },
+        Responsible: {
+            rich_text: [{ text: { content: awardRequest.Responsible } }],
+        },
     };
 };
 

@@ -1,3 +1,6 @@
+const openErrorView = require("../listeners/actions/openErrorView");
+const logger = require("../../utils/logger");
+
 const paginate = (array, pageSize, pageNumber) => {
     const startIndex = (pageNumber - 1) * pageSize;
     return array.slice(startIndex, startIndex + pageSize);
@@ -71,4 +74,127 @@ const createPaginatedView = (
     };
 };
 
-module.exports = createPaginatedView;
+const buildPaginatedView = (
+    app,
+    rootAction,
+    nextAction,
+    prevAction,
+    dataFactory,
+    viewFactory
+) => {
+    let data;
+
+    app.action(rootAction, async ({ ack, body, client }) => {
+        try {
+            await ack();
+
+            const { startDate, endDate } = JSON.parse(
+                body.view.private_metadata
+            );
+
+            data = await dataFactory(new Date(startDate), new Date(endDate));
+
+            await client.views.push({
+                trigger_id: body.trigger_id,
+                view: viewFactory(data, 1),
+            });
+        } catch (error) {
+            logger.error(error);
+            await openErrorView(client, body.trigger_id);
+        }
+    });
+
+    app.action(nextAction, async ({ ack, body, client, action }) => {
+        try {
+            await ack();
+
+            const currentPage = parseInt(action.value);
+
+            await client.views.update({
+                view_id: body.view.id,
+                view: viewFactory(data, currentPage),
+            });
+        } catch (error) {
+            logger.error(error);
+            await openErrorView(client, body.trigger_id);
+        }
+    });
+
+    app.action(prevAction, async ({ ack, body, client, action }) => {
+        try {
+            await ack();
+
+            const currentPage = parseInt(action.value);
+
+            await client.views.update({
+                view_id: body.view.id,
+                view: viewFactory(data, currentPage),
+            });
+        } catch (error) {
+            logger.error(error);
+            await openErrorView(client, body.trigger_id);
+        }
+    });
+};
+
+const buildSelectiveView = (
+    app,
+    openAction,
+    selectedAction,
+    openDataFactory,
+    selectedDataFactory,
+    selector,
+    viewFactory
+) => {
+    let startDate, endDate;
+
+    let data;
+
+    app.action(openAction, async ({ ack, body, client }) => {
+        try {
+            await ack();
+
+            ({ startDate, endDate } = JSON.parse(body.view.private_metadata));
+
+            data = await openDataFactory(
+                new Date(startDate),
+                new Date(endDate)
+            );
+            await client.views.push({
+                trigger_id: body.trigger_id,
+                view: viewFactory(data),
+            });
+        } catch (error) {
+            logger.error(error);
+            await openErrorView(client, body.trigger_id);
+        }
+
+        app.action(selectedAction, async ({ ack, body, client }) => {
+            try {
+                await ack();
+
+                const selected_option = selector(body.view.state.values);
+
+                const records_by_option = await selectedDataFactory(
+                    new Date(startDate),
+                    new Date(endDate),
+                    selected_option.value
+                );
+
+                await client.views.update({
+                    view_id: body.view.id,
+                    view: viewFactory(data, selected_option, records_by_option),
+                });
+            } catch (error) {
+                logger.error(error);
+
+                await openErrorView(client, body.trigger_id);
+            }
+        });
+    });
+};
+module.exports = {
+    createPaginatedView,
+    buildPaginatedView,
+    buildSelectiveView,
+};

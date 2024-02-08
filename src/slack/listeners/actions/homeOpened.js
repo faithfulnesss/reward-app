@@ -1,6 +1,6 @@
+const { employeeRepository } = require("../../../database/repositories");
 const homeView = require("../../views/homeView");
-const employeeRepository = require("../../../database/repositories/employeeRepository");
-const errorView = require("../../views/errorView");
+const logger = require("../../../utils/logger");
 
 module.exports = (app) => {
     app.event("app_home_opened", async ({ event }) => {
@@ -23,7 +23,7 @@ module.exports = (app) => {
                 });
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         }
     });
 };

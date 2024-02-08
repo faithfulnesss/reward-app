@@ -8,16 +8,9 @@ const employeeSchema = new mongoose.Schema({
         enum: ["Employee", "Manager", "HR"],
         default: "Employee",
     },
-    Team: {
-        type: String,
-        default: "Not Assigned",
-    },
+    Team: { type: String, default: "Not Assigned" },
     Balance: { type: Number, default: 0, min: 0 },
-    ManagerBalance: {
-        type: Number,
-        min: 0,
-        default: 500,
-    },
+    ManagerBalance: { type: Number, min: 0, default: 500 },
     Joined: { type: Date, default: Date.now },
 });
 

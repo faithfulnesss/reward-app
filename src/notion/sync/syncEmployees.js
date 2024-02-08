@@ -1,6 +1,7 @@
-const config = require("../../config");
 const notionService = require("../services/notionService");
-const employeeRepository = require("../../database/repositories/employeeRepository");
+const { employeeRepository } = require("../../database/repositories");
+const config = require("../../config");
+const logger = require("../../utils/logger");
 
 // sync logic
 // 1. get all employees from notion
@@ -24,6 +25,7 @@ const syncEmployees = async () => {
             );
 
             if (!notionRecord) {
+                logger.info(`Creating employee ${employee.Name}`);
                 await notionService.createNotionRecord(
                     config.employeesDbId,
                     mapNotionEmployee(employee)
@@ -32,6 +34,7 @@ const syncEmployees = async () => {
                 notionRecord.Role !== employee.Role ||
                 notionRecord.Team !== employee.Team
             ) {
+                logger.info(`Updating employee ${employee.Name}`);
                 await employeeRepository.updateEmployee(
                     { SlackID: employee.SlackID },
                     {
@@ -42,7 +45,7 @@ const syncEmployees = async () => {
             }
         }
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 

@@ -9,16 +9,27 @@ const createEmployee = async (slackId, name) => {
         });
         return createdEmployee;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
-const getEmployees = async () => {
+const getEmployees = async (filter) => {
     try {
-        const employees = await Employee.find();
+        const employees = await Employee.find(filter || {});
         return employees;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
+    }
+};
+
+const getEmployeesSortedByBalanceDescending = async (filter) => {
+    try {
+        const employees = await Employee.find(filter || {}).sort({
+            Balance: -1,
+        });
+        return employees;
+    } catch (error) {
+        logger.error(error);
     }
 };
 
@@ -27,7 +38,7 @@ const getEmployeesCount = async (filter) => {
         const employeesCount = await Employee.countDocuments(filter || {});
         return employeesCount;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -36,7 +47,7 @@ const getEmployee = async (filter) => {
         const employee = await Employee.findOne(filter || {});
         return employee;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -46,7 +57,7 @@ const getEmployeeBalance = async (slackId) => {
 
         return employee.Balance;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -55,7 +66,7 @@ const employeeExists = async (slackId) => {
         const employee = await Employee.findOne({ SlackID: slackId });
         return !!employee;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -64,7 +75,7 @@ const updateEmployee = async (filter, update) => {
         const employee = await Employee.findOneAndUpdate(filter, update);
         return employee;
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -76,7 +87,7 @@ const resetManagersBalance = async (slackId = null) => {
         }
         await Employee.updateMany(query, { ManagerBalance: 500 });
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 };
 
@@ -119,14 +130,174 @@ const getBalanceDistributionByTeam = async () => {
     }
 };
 
+async function getUnrecognizedEmployeesList(startDate, endDate, teamName) {
+    try {
+        const result = await Employee.aggregate([
+            {
+                $match: {
+                    Team: teamName,
+                    Joined: { $lte: endDate },
+                },
+            },
+            {
+                $lookup: {
+                    from: "recognitions",
+                    let: { employeeId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$Receiver", "$$employeeId"] },
+                                        { $gte: ["$CreatedAt", startDate] },
+                                        { $lte: ["$CreatedAt", endDate] },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                    as: "recognitions",
+                },
+            },
+            {
+                $match: {
+                    recognitions: { $size: 0 },
+                },
+            },
+            {
+                $project: {
+                    _id: 1,
+                    Name: 1,
+                    Joined: 1,
+                    Team: 1,
+                },
+            },
+            {
+                $sort: {
+                    Team: 1,
+                },
+            },
+        ]);
+
+        return result;
+    } catch (error) {
+        logger.error(error);
+    }
+}
+
+async function getUnrecognizedEmployeesCount(startDate, endDate) {
+    try {
+        const result = await Employee.aggregate([
+            {
+                $match: {
+                    Joined: { $lte: endDate },
+                },
+            },
+            {
+                $lookup: {
+                    from: "recognitions",
+                    let: { employeeId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$Receiver", "$$employeeId"] },
+                                        { $gte: ["$CreatedAt", startDate] },
+                                        { $lte: ["$CreatedAt", endDate] },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                    as: "recognitions",
+                },
+            },
+            {
+                $match: {
+                    recognitions: { $size: 0 },
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    count: { $sum: 1 },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    count: 1,
+                },
+            },
+        ]);
+
+        return result.length > 0 ? result[0].count : 0;
+    } catch (error) {
+        logger.error(error);
+    }
+}
+
+async function getTeamsWithUnrecognizedEmployees(startDate, endDate) {
+    try {
+        const result = await Employee.aggregate([
+            {
+                $lookup: {
+                    from: "recognitions",
+                    let: { employeeId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$Receiver", "$$employeeId"] },
+                                        { $gte: ["$CreatedAt", startDate] },
+                                        { $lte: ["$CreatedAt", endDate] },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                    as: "recognitions",
+                },
+            },
+            {
+                $match: {
+                    recognitions: { $size: 0 },
+                },
+            },
+            {
+                $group: {
+                    _id: "$Team",
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    Name: "$_id",
+                },
+            },
+        ]);
+
+        return result;
+    } catch (error) {
+        logger.error(error);
+        throw error;
+    }
+}
+
 module.exports = {
     getEmployee,
     getEmployees,
     getEmployeeBalance,
+    getEmployeesCount,
+    getEmployeesSortedByBalanceDescending,
     employeeExists,
     createEmployee,
     updateEmployee,
-    getEmployeesCount,
-    getBalanceDistributionByTeam,
     resetManagersBalance,
+    getBalanceDistributionByTeam,
+    getUnrecognizedEmployeesList,
+    getUnrecognizedEmployeesCount,
+    getTeamsWithUnrecognizedEmployees,
 };

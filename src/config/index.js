@@ -8,9 +8,11 @@ const config = {
     notionToken: process.env.NOTION_TOKEN,
     rewardsDbId: process.env.REWARDS_DB_ID,
     employeesDbId: process.env.EMPLOYEES_DB_ID,
-    channelId: process.env.CHANNEL_ID,
+    generalChannelId: process.env.GENERAL_CHANNEL_ID,
+    notificationsChannelId: process.env.NOTIFICATIONS_CHANNEL_ID,
     awardsDbId: process.env.AWARDS_DB_ID,
     awardRequestsDbId: process.env.AWARD_REQUESTS_DB_ID,
+    rewardRequestsDbId: process.env.REWARD_REQUESTS_DB_ID,
 };
 
 module.exports = config;
