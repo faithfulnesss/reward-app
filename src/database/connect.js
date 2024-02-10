@@ -5,7 +5,7 @@ const logger = require("../utils/logger");
 const connectDB = async () => {
     try {
         await mongoose.connect(config.mongoDbUri);
-        mongoose.set("debug", true);
+        // mongoose.set("debug", true);
     } catch (error) {
         logger.error(error);
     }
